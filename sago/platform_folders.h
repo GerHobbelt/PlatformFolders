@@ -283,7 +283,7 @@ private:
 	PlatformFolders& operator=(const PlatformFolders&);
 #if !defined(_WIN32) && !defined(__APPLE__)
 	struct PlatformFoldersData;
-	PlatformFoldersData* data;
+	PlatformFoldersData* data {};
 #endif
 };
 
