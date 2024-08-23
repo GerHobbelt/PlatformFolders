@@ -19,6 +19,7 @@ if(PLATFORMFOLDERS_BUILD_SHARED_LIBS)
 endif()
 
 add_library(platform_folders ${PLATFORMFOLDERS_TYPE}
+	sago/platform_folders.h
 	sago/platform_folders.cpp
 )
 
