@@ -40,29 +40,33 @@ SOFTWARE.
 /**
  * Retrives the effective user's home dir.
  * If the user is running as root we ignore the HOME environment. It works badly with sudo.
- * Writing to $HOME as root implies security concerns that a multiplatform program cannot be assumed to handle.
+ * Writing to $HOME as root implies security concerns that a multiplatform programs cannot be assumed to handle.
+ * If HOME is not set or we are root, we use the value from the passwd struct
  * @return The home directory. HOME environment is respected for non-root users if it exists.
  */
 static std::string getHome() {
 	std::string res;
 	auto uid = getuid();
 	const char* homeEnv = std::getenv("HOME");
-	if ( uid != 0 && homeEnv) {
-		//We only acknowlegde HOME if not root.
+	if ((uid != 0) && homeEnv) {
+		//We only acknowlegde HOME if we are not root.
 		res = homeEnv;
 		return res;
 	}
-	struct passwd* pw = nullptr;
-	struct passwd pwd;
-	long bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+	size_t bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
 	if (bufsize < 0) {
 		bufsize = 16384;
 	}
-	std::vector<char> buffer;
-	buffer.resize(static_cast<std::size_t>(bufsize));
-	int error_code = getpwuid_r(uid, &pwd, buffer.data(), buffer.size(), &pw);
-	if (error_code) {
-		throw std::runtime_error("Unable to get passwd struct.");
+	std::vector<char> buffer(bufsize);
+	struct passwd pwData;
+	struct passwd* pw = nullptr;
+	getpwuid_r(uid, &pwData, buffer.data(), buffer.size(), &pw);
+	if (!pw && homeEnv) {
+		res = homeEnv;
+		return res;
+	}
+	if (!pw) {
+		throw std::runtime_error("Unable to get passwd struct and HOME not defined.");
 	}
 	const char* tempRes = pw->pw_dir;
 	if (!tempRes) {
